@@ -1,30 +1,20 @@
-import { Button } from "@mantine/core";
-import type {
-  LoaderFunction,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
-import { Form } from "@remix-run/react";
-import dbConnect from "~/services/mongo.server";
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
-};
+import { Flex, Loader } from "@mantine/core";
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { authenticator } from "~/services/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  return null;
+  await authenticator.isAuthenticated(request, {
+    failureRedirect: "/login",
+    successRedirect: "/dashboard",
+  });
 }
 
 export default function Index() {
   return (
-    <div>
-      <h1>Welcome to Remix!</h1>
-      <Form method="post" action="/auth/github">
-        <Button type="submit">Submit</Button>
-      </Form>
-    </div>
+    <>
+      <Flex align="center" justify="center" style={{ height: "100vh" }}>
+        <Loader size="xl" />
+      </Flex>
+    </>
   );
 }

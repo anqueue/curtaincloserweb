@@ -7,15 +7,39 @@ import {
 } from "@remix-run/react";
 
 import "@mantine/core/styles.css";
-import { ColorSchemeScript, MantineProvider } from "@mantine/core";
+import { ColorSchemeScript, createTheme, MantineProvider } from "@mantine/core";
 import dbConnect from "./services/mongo.server";
-import { LoaderFunction } from "@remix-run/node";
-import { User } from "./services/models/User";
+import { LinksFunction, LoaderFunction } from "@remix-run/node";
 
 export const loader: LoaderFunction = async () => {
   await dbConnect();
 
   return true;
+};
+
+/*
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+*/
+export const links: LinksFunction = () => {
+  return [
+    {
+      rel: "preconnect",
+      href: "https://fonts.googleapis.com",
+    },
+    {
+      rel: "preconnect",
+      href: "https://fonts.gstatic.com",
+    },
+    {
+      href: "https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap",
+      rel: "stylesheet",
+    },
+  ];
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -29,7 +53,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ColorSchemeScript />
       </head>
       <body>
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider
+          theme={createTheme({
+            fontFamily: `Inter, Segoe UI, sans-serif`,
+            colors: {
+              dark: [
+                "#BFBFC2",
+                "#A4A5A9",
+                "#8E9196",
+                "#595C63",
+                "#34373D",
+                "#292B30",
+                "#212225",
+                "#161719",
+                "#101113",
+                "#0C0D0F",
+              ],
+            },
+            defaultRadius: "lg",
+          })}
+          defaultColorScheme="dark"
+          forceColorScheme="dark"
+        >
+          {children}
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
