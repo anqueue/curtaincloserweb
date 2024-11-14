@@ -26,8 +26,11 @@ export async function action({ request }: ActionFunctionArgs) {
   await authenticator.isAuthenticated(request, {
     failureRedirect: "/login",
   });
+
+  const url = new URL(request.url);
   const body = await request.formData();
   const action = body.get("action");
+
   if (action == "send-event") {
     sendEvent(Math.random().toString());
     return { action };
@@ -35,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const token = generateToken();
     return json({
       action,
-      url: `http://localhost:3000/demo?token=${token}`,
+      url: `${url.origin}/demo?token=${token}`,
       token,
     });
   } else if (action == "revoke") {
@@ -45,6 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const newExpiry = extendToken(body.get("token") as string);
     return { action, newExpiry };
   }
+
   return null;
 }
 
@@ -69,12 +73,27 @@ type Action = {
 );
 
 const TokenItem = ({ token, expiry }: { token: string; expiry: number }) => {
+  const [expiryTime, setExpiryTime] = useState(
+    Math.max(0, expiry - Date.now()) / 1000
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setExpiryTime(Math.max(0, expiry - Date.now()) / 1000);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [expiry]);
+
   return (
     <li>
       <div>
         <div>
           <div>{token}</div>
-          <div>Expires: {new Date(expiry).toLocaleString()} (</div>
+          <div>
+            Expires: {new Date(expiry).toLocaleTimeString()} (
+            {expiryTime.toFixed(0)}s)
+          </div>
         </div>
         <div>
           <Form method="post" action="/dashboard">
