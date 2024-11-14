@@ -1930,6 +1930,11 @@ chalk@^4.0.0, chalk@^4.1.0, chalk@^4.1.2:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
 
+chalk@^5.3.0:
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.3.0.tgz#67c20a7ebef70e7f3970a01f90fa210cb6860385"
+  integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
+
 character-entities-html4@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/character-entities-html4/-/character-entities-html4-2.1.0.tgz#1f1adb940c971a4b22ba39ddca6b618dc6e56b2b"
@@ -5486,6 +5491,13 @@ remix-auth@^3.7.0:
   dependencies:
     uuid "^8.3.2"
 
+remix-utils@^7.7.0:
+  version "7.7.0"
+  resolved "https://registry.yarnpkg.com/remix-utils/-/remix-utils-7.7.0.tgz#973425232d979d6ec5f18018f816ada74096dcbf"
+  integrity sha512-J8NhP044nrNIam/xOT1L9a4RQ9FSaA2wyrUwmN8ZT+c/+CdAAf70yfaLnvMyKcV5U+8BcURQ/aVbth77sT6jGA==
+  dependencies:
+    type-fest "^4.18.1"
+
 "require-like@>= 0.1.1":
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/require-like/-/require-like-0.1.2.tgz#ad6f30c13becd797010c468afa775c0c0a6b47fa"
@@ -6195,7 +6207,7 @@ type-fest@^0.20.2:
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.20.2.tgz#1bf207f4b28f91583666cb5fbd327887301cd5f4"
   integrity sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==
 
-type-fest@^4.26.1:
+type-fest@^4.18.1, type-fest@^4.26.1:
   version "4.26.1"
   resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-4.26.1.tgz#a4a17fa314f976dd3e6d6675ef6c775c16d7955e"
   integrity sha512-yOGpmOAL7CkKe/91I5O3gPICmJNLJ1G4zFYVAsRHg7M64biSnPtRj0WNQt++bRkjYOqjWXrhnUw1utzmVErAdg==

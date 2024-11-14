@@ -10,12 +10,18 @@ import "@mantine/core/styles.css";
 import { ColorSchemeScript, createTheme, MantineProvider } from "@mantine/core";
 import dbConnect from "./services/mongo.server";
 import { LinksFunction, LoaderFunction } from "@remix-run/node";
+import { cleanupTokens } from "./services/tokens.server";
 
 export const loader: LoaderFunction = async () => {
   await dbConnect();
 
   return true;
 };
+
+// Cleanup expired tokens every 5 minutes
+setInterval(() => {
+  cleanupTokens();
+}, 1000 * 60 * 5);
 
 /*
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -50,7 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        <ColorSchemeScript />
+        <ColorSchemeScript forceColorScheme="dark" />
       </head>
       <body>
         <MantineProvider

@@ -6,7 +6,7 @@ import { GitHubStrategy } from "remix-auth-github";
 
 // Create an instance of the authenticator, pass a generic with what
 // strategies will return and will store in the session
-export let authenticator = new Authenticator<UserInterface>(sessionStorage);
+export const authenticator = new Authenticator<UserInterface>(sessionStorage);
 
 authenticator.use(
   new GitHubStrategy(
@@ -15,7 +15,7 @@ authenticator.use(
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
       redirectURI: "http://localhost:3000/auth/github/callback",
     },
-    async ({ profile, tokens, request, context }) => {
+    async ({ profile }) => {
       let user = await User.findOne({ email: profile.emails[0].value });
 
       console.log("Authenticating with GitHub", user);

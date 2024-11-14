@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { connect } from "mongoose";
 const MONGO_URI = process.env.MONGO_URI;
 
