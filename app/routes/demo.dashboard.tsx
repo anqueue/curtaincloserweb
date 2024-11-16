@@ -11,7 +11,17 @@ import {
 } from "~/services/tokens.server";
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
-import { Button, Container, Title } from "@mantine/core";
+import {
+  Button,
+  Card,
+  Container,
+  Flex,
+  Paper,
+  Text,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
+// import { IconClock } from "@tabler/icons-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await authenticator.isAuthenticated(request, {
@@ -74,7 +84,15 @@ type Action = {
     }
 );
 
-const TokenItem = ({ token, expiry }: { token: string; expiry: number }) => {
+const TokenItem = ({
+  token,
+  expiry,
+  selected,
+}: {
+  token: string;
+  expiry: number;
+  selected: boolean;
+}) => {
   const [expiryTime, setExpiryTime] = useState(
     Math.max(0, expiry - Date.now()) / 1000
   );
@@ -88,29 +106,27 @@ const TokenItem = ({ token, expiry }: { token: string; expiry: number }) => {
   }, [expiry]);
 
   return (
-    <li>
+    <Card>
       <div>
+        <Text fw={selected ? "bold" : "normal"}>{token}</Text>
         <div>
-          <div>{token}</div>
-          <div>
-            Expires: {new Date(expiry).toLocaleTimeString()} (
-            {expiryTime.toFixed(0)}s)
-          </div>
-        </div>
-        <div>
-          <Form method="post" action="/demo/dashboard">
-            <input type="hidden" name="action" value="revoke" />
-            <input type="hidden" name="token" value={token} />
-            <button type="submit">Revoke</button>
-          </Form>
-          <Form method="post" action="/demo/dashboard">
-            <input type="hidden" name="action" value="extend" />
-            <input type="hidden" name="token" value={token} />
-            <button type="submit">Extend</button>
-          </Form>
+          Expires: {new Date(expiry).toLocaleTimeString()} (
+          {expiryTime.toFixed(0)}s)
         </div>
       </div>
-    </li>
+      <div>
+        <Form method="post" action="/demo/dashboard">
+          <input type="hidden" name="action" value="revoke" />
+          <input type="hidden" name="token" value={token} />
+          <button type="submit">Revoke</button>
+        </Form>
+        <Form method="post" action="/demo/dashboard">
+          <input type="hidden" name="action" value="extend" />
+          <input type="hidden" name="token" value={token} />
+          <button type="submit">Extend</button>
+        </Form>
+      </div>
+    </Card>
   );
 };
 
@@ -118,55 +134,108 @@ export default function Dashboard() {
   const message = useEventSource("/api/events", { event: "message" });
   const actionData = useActionData<Action>();
   const { tokens } = useLoaderData<typeof loader>();
+  const [selectedToken, setSelectedToken] = useState<string | null>("");
 
-  return (
-    <div>
-      <h1>Demo Access Dashboard</h1>
-
-      <div>
-        <Form method="post" action="/demo/dashboard">
-          <input type="hidden" name="action" value="send-event" />
-          <div>{message ? <p>{message}</p> : "Waiting for events..."}</div>
-          <button type="submit">Send Event</button>
-        </Form>
-
-        <Form method="post" action="/demo/dashboard">
-          <input type="hidden" name="action" value="create-demo-link" />
-          <button type="submit">Create Demo Link</button>
-          {actionData?.action === "create-demo-link" && (
-            <div>
-              <p>
-                <a href={actionData.url}>{actionData.url}</a>
-                <br />
-                <span>Token: {actionData.token}</span>
-                <br />
-
-                <QRCode value={actionData.url} />
-              </p>
-            </div>
-          )}
-        </Form>
-      </div>
-
-      <h2>Active Tokens</h2>
-      <ul>
-        {tokens.map((token) => (
-          <TokenItem
-            key={token.token}
-            token={token.token}
-            expiry={token.expiry}
-          />
-        ))}
-      </ul>
-    </div>
-  );
+  useEffect(() => {
+    if (actionData?.action == "create-demo-link") {
+      setSelectedToken(actionData.token);
+    }
+  }, [actionData]);
 
   // return (
-  //   <Container p="xs">
-  //     <Title order={2} ta="center">
-  //       Demo Dashboard
-  //     </Title>
-  //     <Button>Button</Button>
-  //   </Container>
+  //   <div>
+  //     <h1>Demo Access Dashboard</h1>
+
+  //     <div>
+  //       <Form method="post" action="/demo/dashboard">
+  //         <input type="hidden" name="action" value="send-event" />
+  //         <div>{message ? <p>{message}</p> : "Waiting for events..."}</div>
+  //         <button type="submit">Send Event</button>
+  //       </Form>
+
+  //       <Form method="post" action="/demo/dashboard">
+  //         <input type="hidden" name="action" value="create-demo-link" />
+  //         <button type="submit">Create Demo Link</button>
+  //         {actionData?.action === "create-demo-link" && (
+  //           <div>
+  //             <p>
+  //               <a href={actionData.url}>{actionData.url}</a>
+  //               <br />
+  //               <span>Token: {actionData.token}</span>
+  //               <br />
+
+  //               <QRCode value={actionData.url} />
+  //             </p>
+  //           </div>
+  //         )}
+  //       </Form>
+  //     </div>
+
+  //     <h2>Active Tokens</h2>
+  //     <ul>
+  //       {tokens.map((token) => (
+  //         <TokenItem
+  //           key={token.token}
+  //           token={token.token}
+  //           expiry={token.expiry}
+  //         />
+  //       ))}
+  //     </ul>
+  //   </div>
   // );
+
+  return (
+    <Container p="xs">
+      <Title order={2} ta="center">
+        Curtain Closer Demo
+      </Title>
+      <Form method="post" action="/demo/dashboard">
+        <input type="hidden" name="action" value="create-demo-link" />
+        <Flex justify="center" align="center" mt="sm">
+          <Button type="submit">Create Demo Link</Button>
+        </Flex>
+        {selectedToken && (
+          <QRCode
+            style={{ display: "block", margin: "10px auto" }}
+            value={`${window.location.origin}/demo/controls?token=${selectedToken}`}
+          />
+        )}
+        {actionData?.action === "create-demo-link" && (
+          <div>
+            <p>
+              <a href={actionData.url}>{actionData.url}</a>
+              <br />
+              <span>Token: {actionData.token}</span>
+              <br />
+            </p>
+          </div>
+        )}
+      </Form>
+      <Paper withBorder mt="sm" radius="md" p="sm">
+        <Text fw="bold" size="lg">
+          Active Demo Tokens
+        </Text>
+        {tokens.map((token) => (
+          <UnstyledButton
+            style={{
+              display: "block",
+              width: "100%",
+              textAlign: "left",
+              marginBottom: "0.5rem",
+            }}
+            key={token.token}
+            onClick={() => {
+              setSelectedToken(token.token);
+            }}
+          >
+            <TokenItem
+              selected={selectedToken === token.token}
+              token={token.token}
+              expiry={token.expiry}
+            />
+          </UnstyledButton>
+        ))}
+      </Paper>
+    </Container>
+  );
 }

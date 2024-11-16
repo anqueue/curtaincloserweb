@@ -23,6 +23,7 @@
     "express": "^4.19.2",
     "isbot": "^4.1.0",
     "lowdb": "^7.0.1",
+    "lucide-react": "^0.460.0",
     "mongoose": "^8.8.1",
     "morgan": "^1.10.0",
     "react": "^18.2.0",
