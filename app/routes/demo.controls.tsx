@@ -1,5 +1,5 @@
-import { Button } from "@mantine/core";
 import { json, LoaderFunctionArgs } from "@remix-run/node";
+import { Button } from "~/components/ui/button";
 import { isValidToken } from "~/services/tokens.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {

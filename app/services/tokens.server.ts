@@ -3,9 +3,7 @@ export const TOKENS: Map<string, number> = new Map(); // token, expiry timestamp
 setInterval(cleanupTokens, 1000 * 60); // 1 minute
 
 export function generateToken(): string {
-  const token =
-    Math.random().toString(36).substring(2) +
-    Math.random().toString(36).substring(2);
+  const token = Math.random().toString(36).substring(2);
   TOKENS.set(token, Date.now() + 1000 * 60); // 1 minute expiry
   return token;
 }

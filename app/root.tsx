@@ -6,8 +6,6 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 
-import "@mantine/core/styles.css";
-import { ColorSchemeScript, createTheme, MantineProvider } from "@mantine/core";
 import dbConnect from "./services/mongo.server";
 import { LinksFunction, LoaderFunction } from "@remix-run/node";
 
@@ -25,8 +23,12 @@ export const loader: LoaderFunction = async () => {
       rel="stylesheet"
     />
 */
+
+import styles from "./index.css?url";
+
 export const links: LinksFunction = () => {
   return [
+    { rel: "stylesheet", href: styles },
     {
       rel: "preconnect",
       href: "https://fonts.googleapis.com",
@@ -50,33 +52,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        <ColorSchemeScript forceColorScheme="dark" />
       </head>
       <body>
-        <MantineProvider
-          theme={createTheme({
-            fontFamily: `Inter, Segoe UI, sans-serif`,
-            colors: {
-              dark: [
-                "#BFBFC2",
-                "#A4A5A9",
-                "#8E9196",
-                "#595C63",
-                "#34373D",
-                "#292B30",
-                "#212225",
-                "#161719",
-                "#101113",
-                "#0C0D0F",
-              ],
-            },
-            defaultRadius: "lg",
-          })}
-          defaultColorScheme="dark"
-          forceColorScheme="dark"
-        >
-          {children}
-        </MantineProvider>
+        {children}
         <ScrollRestoration />
         <Scripts />
       </body>
