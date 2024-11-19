@@ -12,6 +12,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // run();
 
+    send({ event: "keep-alive", data: `${Date.now()}` });
+
     emitter.on("message", (message) => {
       send({ event: "message", data: message });
     });
