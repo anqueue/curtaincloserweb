@@ -13,7 +13,9 @@ authenticator.use(
     {
       clientId: process.env.GITHUB_CLIENT_ID || "",
       clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-      redirectURI: "http://localhost:3000/auth/github/callback",
+      redirectURI:
+        process.env.GITHUB_REDIRECT_URI ||
+        "http://localhost:3000/auth/github/callback",
     },
     async ({ profile }) => {
       let user = await User.findOne({ email: profile.emails[0].value });
