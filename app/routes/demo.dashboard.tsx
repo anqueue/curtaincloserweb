@@ -25,6 +25,9 @@ import {
   DialogHeader,
   DialogDescription,
 } from "~/components/ui/dialog";
+import Device from "~/services/models/Device";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 // import { IconClock } from "@tabler/icons-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -35,7 +38,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     token,
     expiry,
   }));
-  return json({ tokens });
+
+  const devices = await Device.find();
+  console.log(devices, "devices");
+  return json({ tokens, devices });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -63,6 +69,27 @@ export async function action({ request }: ActionFunctionArgs) {
   } else if (action == "extend") {
     const newExpiry = extendToken(body.get("token") as string);
     return { action, newExpiry };
+  } else if (action == "create-device") {
+    await Device.create({
+      openRotations: 0,
+      closeRotations: 0,
+      openAt: 0,
+      closeAt: 0,
+    });
+    return { action };
+  } else if (action == "edit-device") {
+    const id = body.get("_id") as string;
+    const openRotations = parseInt(body.get("openRotations") as string);
+    const closeRotations = parseInt(body.get("closeRotations") as string);
+    const openAt = parseInt(body.get("openAt") as string);
+    const closeAt = parseInt(body.get("closeAt") as string);
+    await Device.findByIdAndUpdate(id, {
+      openRotations,
+      closeRotations,
+      openAt,
+      closeAt,
+    });
+    return { action };
   }
 
   return null;
@@ -85,6 +112,12 @@ type Action = {
   | {
       action: "extend";
       newExpiry: number;
+    }
+  | {
+      action: "create-device";
+    }
+  | {
+      action: "edit-device";
     }
 );
 
@@ -157,7 +190,7 @@ const TokenItem = ({
 export default function Dashboard() {
   const message = useEventSource("/api/events", { event: "message" });
   const actionData = useActionData<Action>();
-  const { tokens } = useLoaderData<typeof loader>();
+  const { tokens, devices } = useLoaderData<typeof loader>();
   const [selectedToken, setSelectedToken] = useState<string | null>("");
 
   useEffect(() => {
@@ -228,6 +261,142 @@ export default function Dashboard() {
           </ScrollArea>
         </CardContent>
       </Card>
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="text-center">Options</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center">
+          <div className="mb-4 text-center">
+            {devices.length ? (
+              devices.map((device) => (
+                <div
+                  key={device._id}
+                  className="flex items-center justify-between w-full"
+                >
+                  <Form method="post" className="w-full">
+                    <input type="hidden" name="action" value="edit-device" />
+                    <input type="hidden" name="_id" value={device._id} />
+
+                    <div className="flex items-end gap-4">
+                      <NumberInput
+                        id={`openRotations-${device._id}`}
+                        name="openRotations"
+                        defaultValue={device.openRotations}
+                        label="Open Rotations"
+                      />
+
+                      <NumberInput
+                        id={`closeRotations-${device._id}`}
+                        name="closeRotations"
+                        defaultValue={device.closeRotations}
+                        label="Close Rotations"
+                      />
+
+                      <TimeInput
+                        id={`openAt-${device._id}`}
+                        name="openAt"
+                        defaultValue={device.openAt}
+                        label="Open At"
+                      />
+
+                      <TimeInput
+                        id={`closeAt-${device._id}`}
+                        name="closeAt"
+                        defaultValue={device.closeAt}
+                        label="Close At"
+                      />
+
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        size="sm"
+                        className="mb-0.5"
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </Form>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-600">No devices found</p>
+            )}
+          </div>
+          {devices.length <= 0 && (
+            <Form method="post" action="/demo/dashboard" className="mb-4">
+              <input type="hidden" name="action" value="create-device" />
+              <Button type="submit" className="w-full">
+                Create Device
+              </Button>
+            </Form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+const TimeInput = ({ id, name, defaultValue, label }) => {
+  // Convert number to HH:mm format
+  const formatTimeValue = (num) => {
+    const hours = Math.floor(num);
+    const minutes = Math.round((num % 1) * 60);
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  // Convert HH:mm to decimal number
+  const parseTimeValue = (timeString) => {
+    const [hours, minutes] = timeString.split(":").map(Number);
+    return hours + minutes / 60;
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        name={name}
+        type="time"
+        defaultValue={formatTimeValue(defaultValue)}
+        className="w-32 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-calendar-picker-indicator]:dark:invert"
+        onChange={(e) => {
+          // Store the decimal value in a hidden input for form submission
+          const hiddenInput = document.getElementById(`${id}-hidden`);
+          if (hiddenInput) {
+            hiddenInput.value = parseTimeValue(e.target.value);
+          }
+        }}
+      />
+      <input
+        type="hidden"
+        id={`${id}-hidden`}
+        name={name}
+        defaultValue={defaultValue}
+      />
+    </div>
+  );
+};
+
+const NumberInput = ({ id, name, defaultValue, label }) => {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input
+          id={id}
+          type="number"
+          name={name}
+          defaultValue={defaultValue}
+          className="w-24 pr-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          min={0}
+          step={1}
+          onChange={(e) => {
+            e.target.value = Math.max(0, parseInt(e.target.value) || 0);
+          }}
+        />
+      </div>
+    </div>
+  );
+};
