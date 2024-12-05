@@ -12,7 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // run();
 
-    send({ event: "keep-alive", data: `${Date.now()}` });
+    send({ event: "keep-alive", data: `hello` });
 
     emitter.on("message", (message) => {
       send({ event: "message", data: message });
