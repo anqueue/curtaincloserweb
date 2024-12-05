@@ -5,6 +5,7 @@ export interface DeviceInterface extends mongoose.Document {
   closeRotations: number;
   openAt: number;
   closeAt: number;
+  swapOpenClose: boolean;
 }
 
 const DeviceSchema = new mongoose.Schema<DeviceInterface>(
@@ -13,6 +14,7 @@ const DeviceSchema = new mongoose.Schema<DeviceInterface>(
     closeRotations: { type: Number, required: true },
     openAt: { type: Number, required: true }, // 0000 - 2400
     closeAt: { type: Number, required: true }, // 0000 - 2400
+    swapOpenClose: { type: Boolean, required: true },
   },
   {
     timestamps: true,

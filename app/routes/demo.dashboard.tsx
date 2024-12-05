@@ -25,9 +25,12 @@ import {
   DialogHeader,
   DialogDescription,
 } from "~/components/ui/dialog";
-import Device from "~/services/models/Device";
+import Device, { DeviceInterface } from "~/services/models/Device";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { send } from "vite";
+import { Mongoose } from "mongoose";
+import { Checkbox } from "~/components/ui/checkbox";
 // import { IconClock } from "@tabler/icons-react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -40,7 +43,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }));
 
   const devices = await Device.find();
-  console.log(devices, "devices");
   return json({ tokens, devices });
 }
 
@@ -83,13 +85,35 @@ export async function action({ request }: ActionFunctionArgs) {
     const closeRotations = parseInt(body.get("closeRotations") as string);
     const openAt = parseInt(body.get("openAt") as string);
     const closeAt = parseInt(body.get("closeAt") as string);
+    const swapOpenClose = body.get("swapOpenClose") === "on";
+    console.log(openRotations, closeRotations, openAt, closeAt, swapOpenClose);
     await Device.findByIdAndUpdate(id, {
       openRotations,
       closeRotations,
       openAt,
       closeAt,
+      swapOpenClose,
     });
     return { action };
+  } else if (action == "open" || action == "close") {
+    const device: DeviceInterface | null = await Device.findOne();
+    if (!device) {
+      throw new Error("No devices found");
+    }
+
+    let _action = action;
+    if (device.swapOpenClose) {
+      _action = action == "open" ? "close" : "open";
+    }
+
+    let rotations = 0;
+    if (_action == "open") {
+      rotations = device.openRotations;
+    } else {
+      rotations = device.closeRotations;
+    }
+
+    sendEvent(`${_action == "open" ? "+" : "-"}${Math.abs(rotations)}`);
   }
 
   return null;
@@ -118,6 +142,12 @@ type Action = {
     }
   | {
       action: "edit-device";
+    }
+  | {
+      action: "open";
+    }
+  | {
+      action: "close";
     }
 );
 
@@ -188,10 +218,12 @@ const TokenItem = ({
 };
 
 export default function Dashboard() {
-  const message = useEventSource("/api/events", { event: "message" });
   const actionData = useActionData<Action>();
   const { tokens, devices } = useLoaderData<typeof loader>();
   const [selectedToken, setSelectedToken] = useState<string | null>("");
+  const [connected, setConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState<string>("");
+  const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
   useEffect(() => {
     if (actionData?.action == "create-demo-link") {
@@ -199,11 +231,40 @@ export default function Dashboard() {
     }
   }, [actionData]);
 
+  useEffect(() => {
+    const es = new EventSource("/api/events");
+
+    es.onopen = () => {
+      console.log("Connection opened");
+      setConnected(true);
+    };
+
+    es.onerror = () => {
+      console.log("Connection error");
+      setConnected(false);
+    };
+
+    es.onmessage = (event) => {
+      console.log("Message received:", event.data);
+      setLastMessage(event.data);
+    };
+
+    setEventSource(es);
+
+    // Cleanup on component unmount
+    return () => {
+      es.close();
+    };
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="font-semibold flex flex-col text-xl mb-4 items-center">
+        Curtain Clock
+      </div>
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="text-center">Curtain Closer Demo</CardTitle>
+          <CardTitle className="text-center">QR Code Viewer</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center">
           {selectedToken ? (
@@ -236,7 +297,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-center">Active Demo Tokens</CardTitle>
         </CardHeader>
@@ -261,7 +322,7 @@ export default function Dashboard() {
           </ScrollArea>
         </CardContent>
       </Card>
-      <Card className="mt-8">
+      <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-center">Options</CardTitle>
         </CardHeader>
@@ -273,47 +334,66 @@ export default function Dashboard() {
                   key={device._id}
                   className="flex items-center justify-between w-full"
                 >
-                  <Form method="post" className="w-full">
+                  <Form method="post" className="space-y-4 w-full">
                     <input type="hidden" name="action" value="edit-device" />
                     <input type="hidden" name="_id" value={device._id} />
 
-                    <div className="flex items-end gap-4">
-                      <NumberInput
-                        id={`openRotations-${device._id}`}
-                        name="openRotations"
-                        defaultValue={device.openRotations}
-                        label="Open Rotations"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                        <NumberInput
+                          id={`openRotations-${device._id}`}
+                          name="openRotations"
+                          defaultValue={device.openRotations}
+                          label="Open Rotations"
+                          className="w-full"
+                        />
+                        <NumberInput
+                          id={`closeRotations-${device._id}`}
+                          name="closeRotations"
+                          defaultValue={device.closeRotations}
+                          label="Close Rotations"
+                          className="w-full"
+                        />
+                        <TimeInput
+                          id={`openAt-${device._id}`}
+                          name="openAt"
+                          defaultValue={device.openAt}
+                          label="Open At"
+                          className="w-full"
+                        />
+                        <TimeInput
+                          id={`closeAt-${device._id}`}
+                          name="closeAt"
+                          defaultValue={device.closeAt}
+                          label="Close At"
+                          className="w-full"
+                        />
+                      </div>
 
-                      <NumberInput
-                        id={`closeRotations-${device._id}`}
-                        name="closeRotations"
-                        defaultValue={device.closeRotations}
-                        label="Close Rotations"
-                      />
+                      <div className="flex flex-col justify-end space-y-16 md:col-span-1">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`swapOpenClose-${device._id}`}
+                            name="swapOpenClose"
+                            defaultChecked={device.swapOpenClose}
+                          />
+                          <label
+                            htmlFor={`swapOpenClose-${device._id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Swap Open/Close
+                          </label>
+                        </div>
 
-                      <TimeInput
-                        id={`openAt-${device._id}`}
-                        name="openAt"
-                        defaultValue={device.openAt}
-                        label="Open At"
-                      />
-
-                      <TimeInput
-                        id={`closeAt-${device._id}`}
-                        name="closeAt"
-                        defaultValue={device.closeAt}
-                        label="Close At"
-                      />
-
-                      <Button
-                        type="submit"
-                        variant="outline"
-                        size="sm"
-                        className="mb-0.5"
-                      >
-                        Save
-                      </Button>
+                        <Button
+                          type="submit"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          Save Changes
+                        </Button>
+                      </div>
                     </div>
                   </Form>
                 </div>
@@ -330,6 +410,47 @@ export default function Dashboard() {
               </Button>
             </Form>
           )}
+        </CardContent>
+      </Card>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-center">Curtain Controls</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center">
+          <div className="mb-4 text-center">
+            <p className="text-sm text-gray-600">
+              Last message: {lastMessage || "No messages yet"}
+            </p>
+          </div>
+          <Form method="post">
+            <input type="hidden" name="action" value="open" />
+            <Button type="submit" className="mb-4 w-full">
+              Open
+            </Button>
+          </Form>
+          <Form method="post">
+            <input type="hidden" name="action" value="close" />
+            <Button type="submit" className="mb-4 w-full">
+              Close
+            </Button>
+          </Form>
+          <div className="flex items-center justify-center gap-2">
+            <div className="relative">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  connected ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <div
+                className={`absolute -inset-0.5 rounded-full opacity-50 animate-ping duration-1000 ${
+                  connected ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+            </div>
+            <span className="text-sm">
+              {connected ? "Connected" : "Disconnected"}
+            </span>
+          </div>
         </CardContent>
       </Card>
     </div>
