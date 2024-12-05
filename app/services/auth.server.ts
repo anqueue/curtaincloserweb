@@ -1,7 +1,7 @@
 // app/services/auth.server.ts
 import { Authenticator } from "remix-auth";
 import { sessionStorage } from "~/services/session.server";
-import { UserInterface, User } from "./models/User";
+import User, { UserInterface } from "./models/User";
 import { GitHubStrategy } from "remix-auth-github";
 
 // Create an instance of the authenticator, pass a generic with what
