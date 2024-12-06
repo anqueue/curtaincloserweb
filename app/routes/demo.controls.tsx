@@ -6,6 +6,7 @@ import QRCode from "react-qr-code";
 import { Button } from "~/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { authenticator } from "~/services/auth.server";
+import Device, { DeviceInterface } from "~/services/models/Device";
 import { sendEvent } from "~/services/sse.server";
 import { isValidToken } from "~/services/tokens.server";
 
@@ -37,14 +38,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const action = body.get("action");
 
-  if (action == "open") {
-    console.log("OPEN");
-    sendEvent("open");
-    return { action };
-  } else if (action == "close") {
-    console.log("CLOSE");
-    sendEvent("close");
-    return { action };
+  if (action == "open" || action == "close") {
+    const device: DeviceInterface | null = await Device.findOne();
+    if (!device) {
+      throw new Error("No devices found");
+    }
+
+    let _action = action;
+    if (device.swapOpenClose) {
+      _action = action == "open" ? "close" : "open";
+    }
+
+    let rotations = 0;
+    if (_action == "open") {
+      rotations = device.openRotations;
+    } else {
+      rotations = device.closeRotations;
+    }
+
+    sendEvent(`${_action == "open" ? "+" : "-"}${Math.abs(rotations)}`);
   } else {
     throw json({ message: "Invalid action" }, { status: 400 });
   }
