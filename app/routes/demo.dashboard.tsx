@@ -113,7 +113,7 @@ export async function action({ request }: ActionFunctionArgs) {
       rotations = device.closeRotations;
     }
 
-    sendEvent(`${_action == "open" ? "+" : "-"}${Math.abs(rotations)}`);
+    sendEvent(`rotate ${_action == "open" ? "+" : "-"}${Math.abs(rotations)}`);
   }
 
   return null;

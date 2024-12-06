@@ -56,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
       rotations = device.closeRotations;
     }
 
-    sendEvent(`${_action == "open" ? "+" : "-"}${Math.abs(rotations)}`);
+    sendEvent(`rotate ${_action == "open" ? "+" : "-"}${Math.abs(rotations)}`);
   } else {
     throw json({ message: "Invalid action" }, { status: 400 });
   }
